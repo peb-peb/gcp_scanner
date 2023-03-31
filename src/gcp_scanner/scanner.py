@@ -21,6 +21,8 @@ import json
 import logging
 import os
 import sys
+from pathlib import Path
+from datetime import datetime
 from typing import List, Tuple, Dict, Optional,Union
 
 from . import crawl
@@ -56,6 +58,10 @@ def crawl_loop(initial_sa_tuples: List[Tuple[str, Credentials, List[str]]],
   context = SpiderContext(initial_sa_tuples)
   # Main loop
   processed_sas = set()
+
+  # Generate current timestamp to append to output filename
+  scan_time_suffix = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+
   while not context.service_account_queue.empty():
     # Get a new candidate service account / token
     sa_name, credentials, chain_so_far = context.service_account_queue.get()
@@ -274,8 +280,9 @@ def crawl_loop(initial_sa_tuples: List[Tuple[str, Credentials, List[str]]],
 
       sa_results_data = json.dumps(sa_results, indent=2, sort_keys=False)
 
-      with open(out_dir + '/%s.json' % project_id, 'a',
-                encoding='utf-8') as outfile:
+      output_file_name = f'{project_id}-{scan_time_suffix}.json'
+      output_path = Path(out_dir, output_file_name)
+      with open(output_path, 'a', encoding='utf-8') as outfile:
         outfile.write(sa_results_data)
 
       # Clean memory to avoid leak for large amount projects.
